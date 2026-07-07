@@ -3,14 +3,21 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+enum UserType {
+  PLAYER
+  TOURNAMENT_DIRECTOR
+}
+
 model User {
-  id        Int      @id @default(autoincrement())
+  id        String   @id
   email     String   @unique
-  name      String?
+  firstName String?
+  lastName  String?
+  userType  UserType
   createdAt DateTime @default(now())
 }
 
@@ -36,6 +43,7 @@ model Tournament {
   location  String?
   startDate DateTime
   endDate   DateTime?
+  createdBy String
   createdAt DateTime  @default(now())
 }
 

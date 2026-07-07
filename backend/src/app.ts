@@ -1,6 +1,7 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import tournamentRoutes from './routes/tournament.routes'
+import authRoutes from './routes/auth.routes'
 
 const app = Fastify({
   logger: true
@@ -12,6 +13,7 @@ app.register(cors, {
 })
 
 // Register routes
+app.register(authRoutes, { prefix: '/auth' })
 app.register(tournamentRoutes, { prefix: '/tournaments' })
 
 // Health check
