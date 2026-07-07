@@ -1,0 +1,15 @@
+-- CreateTable
+CREATE TABLE "Match" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "eventId" INTEGER NOT NULL,
+    "entry1Id" INTEGER NOT NULL,
+    "entry2Id" INTEGER NOT NULL,
+    "score1" INTEGER,
+    "score2" INTEGER,
+    "court" TEXT,
+    "round" INTEGER,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Match_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "Match_entry1Id_fkey" FOREIGN KEY ("entry1Id") REFERENCES "EventEntry" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT "Match_entry2Id_fkey" FOREIGN KEY ("entry2Id") REFERENCES "EventEntry" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+);

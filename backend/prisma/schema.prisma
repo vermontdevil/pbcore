@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+}
+
+model Player {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String?  @unique
+  dupr      Float?
+  deafDupr  Float?
+  age       Int?
+  createdAt DateTime @default(now())
+
+  TeamPlayer1 Team[] @relation("TeamPlayer1")
+  TeamPlayer2 Team[] @relation("TeamPlayer2")
+
+  eventEntries EventEntry[]
+
+}
+
+model Tournament {
+  id        Int       @id @default(autoincrement())
+  name      String
+  location  String?
+  startDate DateTime
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+}
+
+
+model Event {
+  id        Int      @id @default(autoincrement())
+  name      String
+  format    String
+  ratingMin Float?
+  ratingMax Float?
+  ageMin    Int?
+  ageMax    Int?
+  createdAt DateTime @default(now())
+
+  entries   EventEntry[]
+  matches   Match[]
+}
+
+
+model Team {
+  id        Int      @id @default(autoincrement())
+
+  player1Id Int
+  player2Id Int
+
+  player1   Player   @relation("TeamPlayer1", fields: [player1Id], references: [id])
+  player2   Player   @relation("TeamPlayer2", fields: [player2Id], references: [id])
+
+  createdAt DateTime @default(now())
+
+  eventEntries EventEntry[]
+
+}
+
+model EventEntry {
+  id        Int      @id @default(autoincrement())
+
+  eventId   Int
+  playerId  Int?
+  teamId    Int?
+
+  event     Event    @relation(fields: [eventId], references: [id])
+  player    Player?  @relation(fields: [playerId], references: [id])
+  team      Team?    @relation(fields: [teamId], references: [id])
+
+  matchEntry1 Match[] @relation("MatchEntry1")
+  matchEntry2 Match[] @relation("MatchEntry2")
+
+  createdAt DateTime @default(now())
+}
+
+
+model Match {
+  id        Int      @id @default(autoincrement())
+
+  eventId   Int
+  entry1Id  Int
+  entry2Id  Int
+
+  event     Event       @relation(fields: [eventId], references: [id])
+  entry1    EventEntry  @relation("MatchEntry1", fields: [entry1Id], references: [id])
+  entry2    EventEntry  @relation("MatchEntry2", fields: [entry2Id], references: [id])
+
+  score1    Int?
+  score2    Int?
+  court     String?
+  round     Int?
+  createdAt DateTime @default(now())
+}
+
