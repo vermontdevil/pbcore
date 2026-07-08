@@ -1,166 +1,131 @@
+---
+---
+
 <script lang="ts">
   import { supabase, authUser, isAuthenticated, authToken } from '../lib/auth'
-  import { goto } from 'astro:transitions/client'
 
-  let email = ''
-  let password = ''
-  let firstName = ''
-  let lastName = ''
-  let userType: 'PLAYER' | 'TOURNAMENT_DIRECTOR' = 'PLAYER'
-  let loading = false
-  let error = ''
-  let success = false
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('register-form') as HTMLFormElement | null
+    const firstNameInput = document.getElementById('firstName') as HTMLInputElement | null
+    const lastNameInput = document.getElementById('lastName') as HTMLInputElement | null
+    const emailInput = document.getElementById('email') as HTMLInputElement | null
+    const passwordInput = document.getElementById('password') as HTMLInputElement | null
+    const userTypeSelect = document.getElementById('userType') as HTMLSelectElement | null
+    const submitButton = document.getElementById('submit-button') as HTMLButtonElement | null
+    const errorBox = document.getElementById('form-error') as HTMLDivElement | null
+    const successBox = document.getElementById('form-success') as HTMLDivElement | null
 
-  async function handleRegister() {
-    loading = true
-    error = ''
-
-    try {
-      // Create user in Supabase Auth
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password
-      })
-
-      if (signUpError) {
-        throw new Error(signUpError.message)
-      }
-
-      // Get session and token
-      const { data: sessionData } = await supabase.auth.getSession()
-      if (!sessionData.session?.access_token) {
-        throw new Error('Failed to get auth token')
-      }
-
-      // Create user record in backend
-      const response = await fetch('http://localhost:4000/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionData.session.access_token}`
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          firstName,
-          lastName,
-          userType
-        })
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Registration failed')
-      }
-
-      const userData = await response.json()
-      
-      // Update stores
-      authToken.set(sessionData.session.access_token)
-      authUser.set(userData.user)
-      isAuthenticated.set(true)
-
-      success = true
-      
-      // Redirect based on user type
-      setTimeout(() => {
-        if (userType === 'TOURNAMENT_DIRECTOR') {
-          goto('/tournaments/create')
-        } else {
-          goto('/dashboard')
-        }
-      }, 1000)
-    } catch (err: any) {
-      error = err.message || 'An error occurred during registration'
-    } finally {
-      loading = false
+    if (!form || !firstNameInput || !lastNameInput || !emailInput || !passwordInput || !userTypeSelect || !submitButton || !errorBox || !successBox) {
+      return
     }
-  }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault()
+      errorBox.classList.add('hidden')
+      successBox.classList.add('hidden')
+      submitButton.disabled = true
+      submitButton.textContent = 'Creating Account...'
+
+      try {
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email: emailInput.value,
+          password: passwordInput.value
+        })
+
+        if (signUpError) {
+          throw new Error(signUpError.message)
+        }
+
+        const { data: sessionData } = await supabase.auth.getSession()
+        if (!sessionData.session?.access_token) {
+          throw new Error('Failed to get auth token')
+        }
+
+        const response = await fetch('http://localhost:4000/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${sessionData.session.access_token}`
+          },
+          body: JSON.stringify({
+            email: emailInput.value,
+            password: passwordInput.value,
+            firstName: firstNameInput.value,
+            lastName: lastNameInput.value,
+            userType: userTypeSelect.value
+          })
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Registration failed')
+        }
+
+        const userData = await response.json()
+        authToken.set(sessionData.session.access_token)
+        authUser.set(userData.user)
+        isAuthenticated.set(true)
+
+        successBox.classList.remove('hidden')
+        setTimeout(() => {
+          const destination = userTypeSelect.value === 'TOURNAMENT_DIRECTOR' ? '/tournaments/create' : '/dashboard'
+          window.location.href = destination
+        }, 1000)
+      } catch (err: any) {
+        errorBox.textContent = `✗ ${err.message || 'An error occurred during registration'}`
+        errorBox.classList.remove('hidden')
+      } finally {
+        submitButton.disabled = false
+        submitButton.textContent = 'Create Account'
+      }
+    })
+  })
 </script>
 
 <main class="register-container">
   <div class="register-card">
     <h1>Register for PBCore</h1>
-    
-    {#if success}
-      <div class="success-message">
-        ✓ Registration successful! Redirecting...
+
+    <div id="form-success" class="success-message hidden">✓ Registration successful! Redirecting...</div>
+
+    <form id="register-form">
+      <div class="form-group">
+        <label for="firstName">First Name</label>
+        <input type="text" id="firstName" name="firstName" required />
       </div>
-    {:else}
-      <form on:submit|preventDefault={handleRegister}>
-        <div class="form-group">
-          <label for="firstName">First Name</label>
-          <input
-            type="text"
-            id="firstName"
-            bind:value={firstName}
-            required
-            disabled={loading}
-          />
-        </div>
 
-        <div class="form-group">
-          <label for="lastName">Last Name</label>
-          <input
-            type="text"
-            id="lastName"
-            bind:value={lastName}
-            required
-            disabled={loading}
-          />
-        </div>
+      <div class="form-group">
+        <label for="lastName">Last Name</label>
+        <input type="text" id="lastName" name="lastName" required />
+      </div>
 
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            bind:value={email}
-            required
-            disabled={loading}
-          />
-        </div>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required />
+      </div>
 
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input
-            type="password"
-            id="password"
-            bind:value={password}
-            required
-            minlength="6"
-            disabled={loading}
-          />
-          <small>At least 6 characters</small>
-        </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required minlength="6" />
+        <small>At least 6 characters</small>
+      </div>
 
-        <div class="form-group">
-          <label for="userType">Register as:</label>
-          <select
-            id="userType"
-            bind:value={userType}
-            disabled={loading}
-          >
-            <option value="PLAYER">Player</option>
-            <option value="TOURNAMENT_DIRECTOR">Tournament Director</option>
-          </select>
-        </div>
+      <div class="form-group">
+        <label for="userType">Register as:</label>
+        <select id="userType" name="userType">
+          <option value="PLAYER">Player</option>
+          <option value="TOURNAMENT_DIRECTOR">Tournament Director</option>
+        </select>
+      </div>
 
-        {#if error}
-          <div class="error-message">
-            ✗ {error}
-          </div>
-        {/if}
+      <div id="form-error" class="error-message hidden"></div>
 
-        <button type="submit" disabled={loading}>
-          {loading ? 'Creating Account...' : 'Create Account'}
-        </button>
+      <button id="submit-button" type="submit">Create Account</button>
 
-        <p class="login-link">
-          Already have an account? <a href="/login">Sign in</a>
-        </p>
-      </form>
-    {/if}
+      <p class="login-link">
+        Already have an account? <a href="/login">Sign in</a>
+      </p>
+    </form>
   </div>
 </main>
 
@@ -222,10 +187,8 @@
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
   }
 
-  input:disabled,
-  select:disabled {
-    background-color: #f5f5f5;
-    cursor: not-allowed;
+  .hidden {
+    display: none;
   }
 
   small {
@@ -253,6 +216,7 @@
     border-radius: 3px;
     font-size: 14px;
     text-align: center;
+    margin-bottom: 20px;
   }
 
   button {

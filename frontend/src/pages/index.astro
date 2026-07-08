@@ -1,7 +1,4 @@
 ---
-import { redirect } from 'astro';
-
-// Check if user is authenticated (this will be done client-side in a real app)
-// For now, just redirect to register
-redirect('/register');
+// Redirect the landing page to the registration flow.
+return Astro.redirect('/register');
 ---
